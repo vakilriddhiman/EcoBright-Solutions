@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { 
   Settings, Package, Image as ImageIcon, Pencil, Trash2, 
-  Plus, Upload, Save, ArrowLeft 
+  Plus, Upload, Save, ArrowLeft, MessageSquare, Star
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
@@ -19,12 +19,15 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function Admin() {
   const [products, setProducts] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>({});
   const [loading, setLoading] = useState(true);
 
   // Modal states
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ customerName: "", rating: 5, reviewText: "" });
 
   // Form states
   const [productForm, setProductForm] = useState({
@@ -64,9 +67,10 @@ export default function Admin() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [settingsRes, productsRes] = await Promise.all([
+      const [settingsRes, productsRes, reviewsRes] = await Promise.all([
         fetch('/api/admin/settings'),
-        fetch('/api/admin/products')
+        fetch('/api/admin/products'),
+        fetch('/api/admin/reviews')
       ]);
 
       if (settingsRes.ok) {
@@ -89,11 +93,50 @@ export default function Admin() {
         const productsData = await productsRes.json();
         setProducts(productsData);
       }
+
+      if (reviewsRes.ok) {
+        const reviewsData = await reviewsRes.json();
+        setReviews(reviewsData);
+      }
     } catch (err) {
       console.error(err);
       toast.error('Failed to load admin data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteReview = async (id: number) => {
+    if (!confirm('Delete this review? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/admin/reviews/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
+      toast.success('Review deleted');
+      setReviews(prev => prev.filter(r => r.id !== id));
+    } catch {
+      toast.error('Error deleting review');
+    }
+  };
+
+  const handleAddReview = async () => {
+    if (!reviewForm.customerName.trim() || !reviewForm.reviewText.trim()) {
+      toast.error('Name and review text are required');
+      return;
+    }
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reviewForm)
+      });
+      if (!res.ok) throw new Error('Failed to add review');
+      const newReview = await res.json();
+      setReviews(prev => [newReview, ...prev]);
+      setIsReviewModalOpen(false);
+      setReviewForm({ customerName: "", rating: 5, reviewText: "" });
+      toast.success('Review added successfully');
+    } catch {
+      toast.error('Error adding review');
     }
   };
 
@@ -291,6 +334,13 @@ export default function Admin() {
             <TabsTrigger value="branding" className="py-2 px-4 gap-2 data-[state=active]:bg-background data-[state=active]:text-primary">
               <ImageIcon className="h-4 w-4" />
               Logo & Branding
+            </TabsTrigger>
+            <TabsTrigger value="reviews" className="py-2 px-4 gap-2 data-[state=active]:bg-background data-[state=active]:text-primary">
+              <MessageSquare className="h-4 w-4" />
+              Reviews
+              {reviews.length > 0 && (
+                <span className="ml-1 bg-primary text-white text-xs rounded-full px-1.5 py-0.5 leading-none">{reviews.length}</span>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -539,6 +589,78 @@ export default function Admin() {
               </Card>
             </div>
           </TabsContent>
+
+          {/* REVIEWS TAB */}
+          <TabsContent value="reviews" className="space-y-4 outline-none">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight">Customer Reviews</h2>
+                <p className="text-sm text-muted-foreground mt-1">{reviews.length} total review{reviews.length !== 1 ? 's' : ''}</p>
+              </div>
+              <Button onClick={() => { setReviewForm({ customerName: "", rating: 5, reviewText: "" }); setIsReviewModalOpen(true); }} className="gap-2 bg-primary hover:bg-primary/90">
+                <Plus className="h-4 w-4" /> Add Review
+              </Button>
+            </div>
+
+            <Card className="border-none shadow-sm">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead className="w-[180px]">Customer</TableHead>
+                      <TableHead className="w-[120px]">Rating</TableHead>
+                      <TableHead>Review</TableHead>
+                      <TableHead className="w-[140px]">Date</TableHead>
+                      <TableHead className="text-right w-[80px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reviews.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                          <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                          <p>No reviews yet. Add the first one!</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      reviews.map((r: any) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="font-medium">{r.customerName}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-3.5 w-3.5 ${i < r.rating ? 'fill-[#F4B400] text-[#F4B400]' : 'text-muted-foreground/30'}`}
+                                />
+                              ))}
+                              <span className="text-xs text-muted-foreground ml-1">({r.rating}/5)</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-sm line-clamp-2 max-w-md">{r.reviewText}</p>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteReview(r.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
 
@@ -690,6 +812,62 @@ export default function Admin() {
             <Button variant="outline" onClick={() => setIsProductModalOpen(false)}>Cancel</Button>
             <Button onClick={handleProductSave} className="gap-2">
               <Save className="h-4 w-4" /> Save Product
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Review Modal */}
+      <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-primary" /> Add Customer Review
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="rev-name">Customer Name *</Label>
+              <Input
+                id="rev-name"
+                placeholder="e.g. Rajesh Patel"
+                value={reviewForm.customerName}
+                onChange={e => setReviewForm({ ...reviewForm, customerName: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Star Rating *</Label>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                    className="focus:outline-none transition-transform hover:scale-110"
+                  >
+                    <Star
+                      className={`h-7 w-7 ${star <= reviewForm.rating ? 'fill-[#F4B400] text-[#F4B400]' : 'text-muted-foreground/30'}`}
+                    />
+                  </button>
+                ))}
+                <span className="text-sm text-muted-foreground ml-1">{reviewForm.rating}/5</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="rev-text">Review Text *</Label>
+              <Textarea
+                id="rev-text"
+                rows={4}
+                placeholder="Customer's review about the product or service..."
+                value={reviewForm.reviewText}
+                onChange={e => setReviewForm({ ...reviewForm, reviewText: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter className="border-t pt-4">
+            <Button variant="outline" onClick={() => setIsReviewModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddReview} className="gap-2 bg-primary hover:bg-primary/90">
+              <Save className="h-4 w-4" /> Save Review
             </Button>
           </DialogFooter>
         </DialogContent>

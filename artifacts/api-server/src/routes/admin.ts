@@ -3,8 +3,8 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { db } from "@workspace/db";
-import { productsTable, businessSettingsTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { productsTable, businessSettingsTable, reviewsTable } from "@workspace/db/schema";
+import { eq, desc } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -137,6 +137,27 @@ router.delete("/admin/products/:id", async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(productsTable).where(eq(productsTable.id, id));
   res.json({ success: true, message: "Product deleted successfully" });
+});
+
+// GET /api/admin/reviews
+router.get("/admin/reviews", async (_req, res) => {
+  const reviews = await db.select().from(reviewsTable).orderBy(desc(reviewsTable.createdAt));
+  res.json(
+    reviews.map((r) => ({
+      id: r.id,
+      customerName: r.customerName,
+      rating: r.rating,
+      reviewText: r.reviewText,
+      createdAt: r.createdAt.toISOString(),
+    }))
+  );
+});
+
+// DELETE /api/admin/reviews/:id
+router.delete("/admin/reviews/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  await db.delete(reviewsTable).where(eq(reviewsTable.id, id));
+  res.json({ success: true, message: "Review deleted successfully" });
 });
 
 // POST /api/admin/upload
