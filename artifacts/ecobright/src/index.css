@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700;800&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Brand Fonts */
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Poppins', sans-serif;
+
+  /* 
+    Brand Colors 
+    Primary: Deep Green #0F3D3E -> HSL 181 61% 15%
+    Secondary: Warm Yellow #F4B400 -> HSL 44 100% 48%
+    Accent: Light Grey #F5F5F5 -> HSL 0 0% 96%
+    Text: Charcoal Black #222222 -> HSL 0 0% 13%
+  */
+  
+  --color-background: hsl(0 0% 98%);
+  --color-foreground: hsl(0 0% 13%);
+  --color-border: hsl(181 20% 90%);
+  --color-input: hsl(181 20% 90%);
+  --color-ring: hsl(181 61% 15%);
+
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(0 0% 13%);
+  --color-card-border: hsl(181 20% 90%);
+
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(0 0% 13%);
+  --color-popover-border: hsl(181 20% 90%);
+
+  --color-primary: hsl(181 61% 15%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  
+  --color-secondary: hsl(44 100% 48%);
+  --color-secondary-foreground: hsl(0 0% 13%);
+
+  --color-muted: hsl(0 0% 96%);
+  --color-muted-foreground: hsl(0 0% 40%);
+
+  --color-accent: hsl(44 100% 48%);
+  --color-accent-foreground: hsl(0 0% 13%);
+
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground selection:bg-secondary selection:text-secondary-foreground;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply tracking-tight text-primary;
+  }
+}
+
+/* Custom utility for smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar for clean look in sidebar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

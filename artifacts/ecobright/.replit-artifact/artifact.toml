@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "EcoBright Lights"
+version = "1.0.0"
+id = "artifacts/ecobright"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22909
+
+[services.development]
+run = "pnpm --filter @workspace/ecobright run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ecobright", "run", "build" ]
+publicDir = "artifacts/ecobright/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22909"
+BASE_PATH = "/"

@@ -1,0 +1,17 @@
+packages:
+  "framer-motion": "For smooth scroll animations and slide-in cart sidebar"
+  "react-hook-form": "For robust contact and review forms"
+  "@hookform/resolvers": "For Zod validation integration with forms"
+
+images:
+  - path: "artifacts/ecobright/public/images/hero-bg.png"
+    description: "A premium, modern, luxurious living room interior with warm, perfectly balanced LED lighting, dark green accent walls, elegant decor, high-end photography"
+    aspect_ratio: "16:9"
+  - path: "artifacts/ecobright/public/images/about-solar.png"
+    description: "A sleek, modern home exterior showing high-tech solar panels on the roof with beautiful architectural lighting, golden hour lighting"
+    aspect_ratio: "4:3"
+
+notes:
+  - Cart state is managed entirely client-side via React Context since there are no cart API endpoints.
+  - Checkout redirects to WhatsApp with a pre-filled message containing cart details.
+  - API hooks are imported from @workspace/api-client-react as specified.
