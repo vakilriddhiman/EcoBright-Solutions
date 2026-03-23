@@ -20,3 +20,4 @@
 export * from "./products";
 export * from "./reviews";
 export * from "./contacts";
+export * from "./business_settings";

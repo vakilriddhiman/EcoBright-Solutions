@@ -32,6 +32,28 @@ export interface Product {
   badge?: string;
 }
 
+export type CreateProductCategory =
+  (typeof CreateProductCategory)[keyof typeof CreateProductCategory];
+
+export const CreateProductCategory = {
+  LED_Lights: "LED Lights",
+  Fans: "Fans",
+  Solar_Products: "Solar Products",
+} as const;
+
+export interface CreateProduct {
+  name: string;
+  category: CreateProductCategory;
+  price: number;
+  originalPrice?: number;
+  description: string;
+  imageUrl: string;
+  rating?: number;
+  reviewCount?: number;
+  inStock?: boolean;
+  badge?: string;
+}
+
 export interface Review {
   id: number;
   customerName: string;
@@ -57,6 +79,45 @@ export interface ContactResponse {
   message: string;
 }
 
+export interface BusinessSettings {
+  id: number;
+  businessName: string;
+  tagline: string;
+  address: string;
+  phone1: string;
+  phone2: string;
+  whatsapp: string;
+  email: string;
+  logoUrl: string;
+  mapEmbed: string;
+}
+
+export interface UpdateBusinessSettings {
+  businessName?: string;
+  tagline?: string;
+  address?: string;
+  phone1?: string;
+  phone2?: string;
+  whatsapp?: string;
+  email?: string;
+  logoUrl?: string;
+  mapEmbed?: string;
+}
+
+export interface UploadResponse {
+  url: string;
+  filename: string;
+}
+
+export interface DeleteResponse {
+  success: boolean;
+  message: string;
+}
+
 export type GetProductsParams = {
   category?: string;
+};
+
+export type AdminUploadFileBody = {
+  file: Blob;
 };

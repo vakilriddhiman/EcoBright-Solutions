@@ -8,7 +8,6 @@
 import * as zod from "zod";
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -65,4 +64,140 @@ export const SubmitContactBody = zod.object({
   name: zod.string(),
   phone: zod.string(),
   message: zod.string(),
+});
+
+/**
+ * @summary Get business settings
+ */
+export const GetBusinessSettingsResponse = zod.object({
+  id: zod.number(),
+  businessName: zod.string(),
+  tagline: zod.string(),
+  address: zod.string(),
+  phone1: zod.string(),
+  phone2: zod.string(),
+  whatsapp: zod.string(),
+  email: zod.string(),
+  logoUrl: zod.string(),
+  mapEmbed: zod.string(),
+});
+
+/**
+ * @summary Update business settings
+ */
+export const UpdateBusinessSettingsBody = zod.object({
+  businessName: zod.string().optional(),
+  tagline: zod.string().optional(),
+  address: zod.string().optional(),
+  phone1: zod.string().optional(),
+  phone2: zod.string().optional(),
+  whatsapp: zod.string().optional(),
+  email: zod.string().optional(),
+  logoUrl: zod.string().optional(),
+  mapEmbed: zod.string().optional(),
+});
+
+export const UpdateBusinessSettingsResponse = zod.object({
+  id: zod.number(),
+  businessName: zod.string(),
+  tagline: zod.string(),
+  address: zod.string(),
+  phone1: zod.string(),
+  phone2: zod.string(),
+  whatsapp: zod.string(),
+  email: zod.string(),
+  logoUrl: zod.string(),
+  mapEmbed: zod.string(),
+});
+
+/**
+ * @summary Get all products (admin)
+ */
+export const AdminGetProductsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  category: zod.enum(["LED Lights", "Fans", "Solar Products"]),
+  price: zod.number(),
+  originalPrice: zod.number().optional(),
+  description: zod.string(),
+  imageUrl: zod.string(),
+  rating: zod.number(),
+  reviewCount: zod.number(),
+  inStock: zod.boolean(),
+  badge: zod.string().optional(),
+});
+export const AdminGetProductsResponse = zod.array(AdminGetProductsResponseItem);
+
+/**
+ * @summary Create a new product
+ */
+export const AdminCreateProductBody = zod.object({
+  name: zod.string(),
+  category: zod.enum(["LED Lights", "Fans", "Solar Products"]),
+  price: zod.number(),
+  originalPrice: zod.number().optional(),
+  description: zod.string(),
+  imageUrl: zod.string(),
+  rating: zod.number().optional(),
+  reviewCount: zod.number().optional(),
+  inStock: zod.boolean().optional(),
+  badge: zod.string().optional(),
+});
+
+/**
+ * @summary Update a product
+ */
+export const AdminUpdateProductParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateProductBody = zod.object({
+  name: zod.string(),
+  category: zod.enum(["LED Lights", "Fans", "Solar Products"]),
+  price: zod.number(),
+  originalPrice: zod.number().optional(),
+  description: zod.string(),
+  imageUrl: zod.string(),
+  rating: zod.number().optional(),
+  reviewCount: zod.number().optional(),
+  inStock: zod.boolean().optional(),
+  badge: zod.string().optional(),
+});
+
+export const AdminUpdateProductResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  category: zod.enum(["LED Lights", "Fans", "Solar Products"]),
+  price: zod.number(),
+  originalPrice: zod.number().optional(),
+  description: zod.string(),
+  imageUrl: zod.string(),
+  rating: zod.number(),
+  reviewCount: zod.number(),
+  inStock: zod.boolean(),
+  badge: zod.string().optional(),
+});
+
+/**
+ * @summary Delete a product
+ */
+export const AdminDeleteProductParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminDeleteProductResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+});
+
+/**
+ * @summary Upload an image file
+ */
+export const AdminUploadFileBody = zod.object({
+  file: zod.instanceof(File),
+});
+
+export const AdminUploadFileResponse = zod.object({
+  url: zod.string(),
+  filename: zod.string(),
 });
