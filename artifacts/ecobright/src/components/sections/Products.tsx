@@ -9,6 +9,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const CATEGORIES = ["All", "LED Lights", "Fans", "Solar Products"];
 
+function ProductImage({ src, alt, category }: { src?: string | null; alt: string; category: string }) {
+  const [imgError, setImgError] = useState(false);
+  if (src && !imgError) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+  return (
+    <div className="text-primary/20 group-hover:scale-110 transition-transform duration-500 group-hover:text-primary/40">
+      {categoryIcons[category as keyof typeof categoryIcons] || <Lightbulb className="w-12 h-12" />}
+    </div>
+  );
+}
+
 const categoryIcons = {
   "LED Lights": <Lightbulb className="w-12 h-12" />,
   "Fans": <Wind className="w-12 h-12" />,
@@ -99,17 +118,7 @@ export function Products() {
                       </Badge>
                     )}
                     
-                    {product.imageUrl ? (
-                      <img 
-                        src={product.imageUrl} 
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                      />
-                    ) : (
-                      <div className="text-primary/20 group-hover:scale-110 transition-transform duration-500 group-hover:text-primary/40">
-                        {categoryIcons[product.category as keyof typeof categoryIcons] || <Lightbulb className="w-12 h-12" />}
-                      </div>
-                    )}
+                    <ProductImage src={product.imageUrl} alt={product.name} category={product.category} />
                   </div>
 
                   <div className="flex-1 flex flex-col">
