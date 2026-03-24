@@ -1,31 +1,18 @@
 import { Router, type IRouter } from "express";
 import multer from "multer";
 import path from "path";
-import fs from "fs";
+import { randomUUID } from "crypto";
 import { db } from "@workspace/db";
 import { productsTable, businessSettingsTable, reviewsTable } from "@workspace/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { objectStorageClient } from "../lib/objectStorage";
 
 const router: IRouter = Router();
 
-// Setup multer for file uploads
-const uploadsDir = path.resolve(process.cwd(), "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-    cb(null, uniqueName);
-  },
-});
-
+// Multer uses memory storage — files are uploaded to GCS, not local disk
 const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (_req, file, cb) => {
     const allowed = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
     const ext = path.extname(file.originalname).toLowerCase();
@@ -160,14 +147,59 @@ router.delete("/admin/reviews/:id", async (req, res) => {
   res.json({ success: true, message: "Review deleted successfully" });
 });
 
-// POST /api/admin/upload
-router.post("/admin/upload", upload.single("file"), (req, res) => {
+// Helper: get GCS bucket name and prefix from PRIVATE_OBJECT_DIR env var
+function getGCSBucket() {
+  const dir = process.env.PRIVATE_OBJECT_DIR || "";
+  if (!dir) throw new Error("PRIVATE_OBJECT_DIR not set");
+  const parts = dir.replace(/^\//, "").split("/");
+  const bucketName = parts[0];
+  const prefix = parts.slice(1).join("/") || "uploads";
+  return { bucket: objectStorageClient.bucket(bucketName), prefix };
+}
+
+// POST /api/admin/upload — upload image to GCS (persistent across deployments)
+router.post("/admin/upload", upload.single("file"), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: "No file uploaded" });
     return;
   }
-  const url = `/api/uploads/${req.file.filename}`;
-  res.json({ url, filename: req.file.filename });
+  try {
+    const { bucket, prefix } = getGCSBucket();
+    const ext = path.extname(req.file.originalname).toLowerCase() || ".jpg";
+    const objectId = `${randomUUID()}${ext}`;
+    const gcsFile = bucket.file(`${prefix}/uploads/${objectId}`);
+
+    await gcsFile.save(req.file.buffer, {
+      contentType: req.file.mimetype,
+      metadata: { cacheControl: "public, max-age=31536000" },
+    });
+
+    const url = `/api/uploads/${objectId}`;
+    res.json({ url, filename: objectId });
+  } catch (err) {
+    console.error("GCS upload error:", err);
+    res.status(500).json({ error: "Upload to cloud storage failed" });
+  }
+});
+
+// GET /api/uploads/:id — serve image from GCS
+router.get("/uploads/:id", async (req, res) => {
+  try {
+    const { bucket, prefix } = getGCSBucket();
+    const gcsFile = bucket.file(`${prefix}/uploads/${req.params.id}`);
+    const [exists] = await gcsFile.exists();
+    if (!exists) {
+      res.status(404).json({ error: "Image not found" });
+      return;
+    }
+    const [metadata] = await gcsFile.getMetadata();
+    res.setHeader("Content-Type", (metadata.contentType as string) || "image/jpeg");
+    res.setHeader("Cache-Control", "public, max-age=31536000");
+    gcsFile.createReadStream().pipe(res);
+  } catch (err) {
+    console.error("GCS serve error:", err);
+    res.status(500).json({ error: "Failed to serve image" });
+  }
 });
 
 export default router;
